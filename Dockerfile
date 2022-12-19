@@ -45,6 +45,24 @@ WORKDIR /go
 
 COPY go-wrapper /usr/local/bin/
 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y ca-certificates gosu; \
+	rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+	gosu nobody true
+
+# Non-root user for security purposes.
+#
+# UIDs below 10,000 are a security risk, as a container breakout could result
+# in the container being ran as a more privileged user on the host kernel with
+# the same UID.
+#
+# Static GID/UID is also useful for chown'ing files outside the container where
+# such a user does not exist.
+RUN addgroup -g 10001 -S nonroot && adduser -u 10000 -S -G nonroot -h /home/nonroot nonroot
+
+
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="Golang" \
       org.label-schema.description="$INFO" \
